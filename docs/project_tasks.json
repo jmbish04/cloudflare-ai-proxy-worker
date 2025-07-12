@@ -1,0 +1,16 @@
+[
+  {
+    "Phase":"Planning",
+    "Task":"Define project scope and requirements",
+    "Description":"Document functionality for OpenAI-compatible proxy, model routing logic, and token handling.",
+    "Success Criteria":"All endpoints and models clearly defined and approved.",
+    "Unit Test Requirement":"N/A"
+  },
+  {
+    "Phase":"Setup",
+    "Task":"Initialize Cloudflare Worker project",
+    "Description":"Create project scaffold using wrangler and TypeScript template.",
+    "Success Criteria":"wrangler.toml and index.ts present with basic route handler.",
+    "Unit Test Requirement":"Basic route returns 200 OK."
+  }
+]
