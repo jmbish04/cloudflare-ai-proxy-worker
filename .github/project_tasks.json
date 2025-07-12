@@ -1,0 +1,26 @@
+{
+  "Milestone 1: Setup": {
+    "phase": "Backlog",
+    "tasks": [
+      {
+        "name": "Timeline Project Initiation",
+        "description": "Start with a clear definition of what the Worker does, who the users are, and how requests are handled.",
+        "status": "todo",
+        "success_criteria": "Project is defined and shared via README.md",
+        "unit_tests": "Verify that the OFFICIAL PRD is present and in a standard location."
+      }
+    ]
+  },
+  "Milestone 2: Core Endpoints": {
+    "phase": "To Do",
+    "tasks": [
+      {
+        "name": "/v1/chat/completions",
+        "description": "Implement the main chat completions endpoint for Cloudflare AI worker.",
+        "status": "todo",
+        "success_criteria": "Endpoint returns OpenAI compatible responses and supports multi-provider routing.",
+        "unit_tests": "Mocked requests verify correct routing, headers match, model switching."
+      }
+    ]
+  }
+}
