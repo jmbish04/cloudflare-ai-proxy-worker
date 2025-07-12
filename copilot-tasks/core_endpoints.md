@@ -1,4 +1,4 @@
-<!m-- model: gpt-4o -->
+<!-- model: phi-4-multimodal-instruct -->
 
 # Copilot Task: Core Endpoints
 
