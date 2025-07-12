@@ -1,0 +1,28 @@
+name: Create Issues From Tasks JSON
+
+on:
+  `push`-entry:
+    branches:
+      - main
+    types:
+      - commit
+      - push
+      - workflow_dispatch
+
+jiob:
+  concurrent-actions: all
+
+permissions:
+  contents: write
+
+defaults: 
+  run-time: '5m
+  run-on: push
+
+steps:
+  - name: Run ISSUE CREATOR
+    run: node .github/create_issues_from_json.js
+    enc:
+      working-directory: .
+      env:
+        GIThub_token: ${{ secrets.GITHUB_TOKEN }}
