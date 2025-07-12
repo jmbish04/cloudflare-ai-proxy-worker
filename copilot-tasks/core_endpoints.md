@@ -1,3 +1,5 @@
+<!m-- model: gpt-4o -->
+
 # Copilot Task: Core Endpoints
 
 This task implements the core features for the Cloudflare Worker AI Proxy spec. Fully implement endpoints and framework to route to Cloudflare, OpenAI, and Gemini models, as requested.
@@ -15,7 +17,7 @@ Task Requirements:
 - [] Add model registry in ai-gateway.ts
 - [] Implement token estimation endpoint
 - [] Object to support injecting cookie/header based session tracking
-- [] Secure endpoints using X-AUTH-TOKEN or CORS mechanism
+- [] Secure endpoints using X-AUTH-TOKEN <or CORS mechanism
 
 ## Testing
 
