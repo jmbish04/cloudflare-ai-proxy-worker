@@ -12,11 +12,20 @@ interface GeminiResponse {
       parts?: Array<{ text?: string }>;
     };
     finishReason?: string;
+    safetyRatings?: Array<{
+      category: string;
+      probability: string;
+    }>;
   }>;
   usageMetadata?: {
     promptTokenCount?: number;
     candidatesTokenCount?: number;
     totalTokenCount?: number;
+  };
+  error?: {
+    code: number;
+    message: string;
+    status: string;
   };
 }
 
@@ -29,6 +38,10 @@ export async function handleGeminiChat(
 ): Promise<ChatCompletionResponse> {
   if (!env.GEMINI_API_KEY) {
     throw new Error('Gemini API key not configured');
+  }
+  
+  if (request.stream) {
+    throw new Error('Streaming is not yet supported for Gemini provider');
   }
   
   const model = resolveModel('gemini', request.model);
@@ -67,10 +80,33 @@ export async function handleGeminiChat(
     
     if (!response.ok) {
       const errorData = await response.text();
-      throw new Error(`Gemini API error: ${response.status} ${errorData}`);
+      let parsedError: any;
+      try {
+        parsedError = JSON.parse(errorData);
+      } catch {
+        parsedError = { message: errorData };
+      }
+      
+      // Handle specific Gemini API errors
+      if (response.status === 400) {
+        throw new Error(`Invalid request to Gemini API: ${parsedError.error?.message || parsedError.message || 'Bad request'}`);
+      } else if (response.status === 401) {
+        throw new Error('Invalid Gemini API key');
+      } else if (response.status === 403) {
+        throw new Error('Gemini API access denied - check your API key permissions');
+      } else if (response.status === 429) {
+        throw new Error('Gemini API rate limit exceeded');
+      } else {
+        throw new Error(`Gemini API error (${response.status}): ${parsedError.error?.message || parsedError.message || 'Unknown error'}`);
+      }
     }
     
     const data = await response.json() as GeminiResponse;
+    
+    // Check for API-level errors
+    if (data.error) {
+      throw new Error(`Gemini API error: ${data.error.message} (${data.error.code})`);
+    }
     
     // Convert Gemini response to OpenAI format
     const candidate = data.candidates?.[0];
@@ -78,8 +114,22 @@ export async function handleGeminiChat(
       throw new Error('No response generated from Gemini');
     }
     
+    // Check for safety filtering
+    const unsafeRating = candidate.safetyRatings?.find(rating => 
+      rating.probability === 'HIGH' || rating.probability === 'MEDIUM'
+    );
+    
+    if (candidate.finishReason === 'SAFETY' || unsafeRating) {
+      throw new Error('Content was filtered by Gemini safety systems');
+    }
+    
     const content = candidate.content?.parts?.[0]?.text || '';
     const finishReason = mapGeminiFinishReason(candidate.finishReason);
+    
+    // Validate that we got actual content
+    if (!content && finishReason !== 'content_filter') {
+      throw new Error('Empty response from Gemini API');
+    }
     
     return {
       id: `chatcmpl-${crypto.randomUUID()}`,
@@ -102,7 +152,7 @@ export async function handleGeminiChat(
     };
   } catch (error) {
     console.error('Gemini API error:', error);
-    throw new Error(`Gemini API error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw error; // Re-throw the original error to preserve the message
   }
 }
 
@@ -113,6 +163,14 @@ export async function handleGeminiCompletion(
   request: CompletionRequest,
   env: Env
 ): Promise<CompletionResponse> {
+  if (!env.GEMINI_API_KEY) {
+    throw new Error('Gemini API key not configured');
+  }
+  
+  if (request.stream) {
+    throw new Error('Streaming is not yet supported for Gemini provider');
+  }
+  
   // Convert completion request to chat format
   const chatRequest: ChatCompletionRequest = {
     model: request.model,
@@ -153,6 +211,10 @@ function convertToGeminiFormat(messages: ChatMessage[]): { contents: any[], syst
   let systemInstruction: string | undefined;
   
   for (const message of messages) {
+    if (!message.content || typeof message.content !== 'string') {
+      throw new Error('Message content must be a non-empty string');
+    }
+    
     // Handle system messages with proper system instruction
     if (message.role === 'system') {
       // Combine multiple system messages if present
@@ -168,6 +230,10 @@ function convertToGeminiFormat(messages: ChatMessage[]): { contents: any[], syst
     let role = 'user';
     if (message.role === 'assistant') {
       role = 'model';
+    } else if (message.role !== 'user') {
+      // Handle any unsupported roles by converting to user
+      console.warn(`Unsupported message role '${message.role}' converted to 'user'`);
+      role = 'user';
     }
     
     geminiMessages.push({
@@ -178,10 +244,45 @@ function convertToGeminiFormat(messages: ChatMessage[]): { contents: any[], syst
     });
   }
   
+  // Gemini requires at least one message
+  if (geminiMessages.length === 0) {
+    throw new Error('At least one non-system message is required');
+  }
+  
+  // Ensure alternating user/model pattern for multi-turn conversations
+  if (geminiMessages.length > 1) {
+    const normalizedMessages = normalizeConversationFlow(geminiMessages);
+    return {
+      contents: normalizedMessages,
+      systemInstruction,
+    };
+  }
+  
   return {
     contents: geminiMessages,
     systemInstruction,
   };
+}
+
+/**
+ * Normalize conversation flow to ensure proper user/model alternation
+ */
+function normalizeConversationFlow(messages: any[]): any[] {
+  const normalized: any[] = [];
+  let lastRole: string | null = null;
+  
+  for (const message of messages) {
+    // If we have consecutive messages with the same role, combine them
+    if (lastRole === message.role && normalized.length > 0) {
+      const lastMessage = normalized[normalized.length - 1];
+      lastMessage.parts[0].text += '\n\n' + message.parts[0].text;
+    } else {
+      normalized.push(message);
+      lastRole = message.role;
+    }
+  }
+  
+  return normalized;
 }
 
 /**
@@ -196,7 +297,13 @@ function mapGeminiFinishReason(geminiReason?: string): 'stop' | 'length' | 'cont
     case 'SAFETY':
     case 'RECITATION':
       return 'content_filter';
+    case 'OTHER':
+      return null;
+    case undefined:
+    case null:
+      return 'stop'; // Default to stop if no reason provided
     default:
+      console.warn(`Unknown Gemini finish reason: ${geminiReason}`);
       return null;
   }
 }
