@@ -133,3 +133,38 @@ export interface LogEntry {
   response_time: number;
   status: number;
 }
+
+export interface CodeReviewRequest {
+  code: string;
+  language?: string;
+  filename?: string;
+  context?: string;
+  model?: string;
+  provider?: AIProvider;
+  temperature?: number;
+  focus_areas?: string[];
+}
+
+export interface CodeReviewComment {
+  line?: number;
+  severity: 'info' | 'warning' | 'error' | 'suggestion';
+  category: 'style' | 'performance' | 'security' | 'maintainability' | 'correctness' | 'best-practices';
+  message: string;
+  suggestion?: string;
+}
+
+export interface CodeReviewResponse {
+  id: string;
+  object: 'code.review';
+  created: number;
+  model: string;
+  provider: AIProvider;
+  summary: string;
+  overall_rating: 'excellent' | 'good' | 'fair' | 'needs-improvement';
+  comments: CodeReviewComment[];
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+}

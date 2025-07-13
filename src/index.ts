@@ -5,12 +5,12 @@
  * to different AI providers including Cloudflare Workers AI, OpenAI, and Gemini.
  */
 
-import { Env, ChatCompletionRequest, CompletionRequest, TokenizeRequest, ModelOptionsResponse, RouteCheckResponse, ErrorResponse } from './types.js';
+import { Env, ChatCompletionRequest, CompletionRequest, TokenizeRequest, CodeReviewRequest, ModelOptionsResponse, RouteCheckResponse, ErrorResponse } from './types.js';
 import { CONFIG, resolveModel, inferProvider, getAllModels } from './config.js';
 import { verifyAuth, createUnauthorizedResponse, createCorsHeaders, getSessionId } from './utils/auth.js';
 import { estimateTokens, handleTokenizeRequest } from './utils/tokens.js';
 import { createLogEntry, logRequest, initializeLogging } from './utils/logging.js';
-import { routeChatCompletion, routeCompletion, validateChatRequest, validateCompletionRequest, getAvailableProviders, isProviderAvailable } from './router.js';
+import { routeChatCompletion, routeCompletion, routeCodeReview, validateChatRequest, validateCompletionRequest, validateCodeReviewRequest, getAvailableProviders, isProviderAvailable } from './router.js';
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -40,6 +40,9 @@ export default {
 				
 				case '/v1/completions':
 					return await handleCompletions(request, env, ctx, startTime, corsHeaders);
+				
+				case '/v1/code/review':
+					return await handleCodeReview(request, env, ctx, startTime, corsHeaders);
 				
 				case '/v1/tokenize':
 					return await handleTokenize(request, env, ctx, startTime, corsHeaders);
@@ -196,6 +199,71 @@ async function handleCompletions(
 		});
 	} catch (error) {
 		console.error('Completions error:', error);
+		return createErrorResponse(
+			'Bad Request',
+			'invalid_request',
+			error instanceof Error ? error.message : 'Invalid request',
+			400,
+			corsHeaders
+		);
+	}
+}
+
+/**
+ * Handle /v1/code/review endpoint
+ */
+async function handleCodeReview(
+	request: Request,
+	env: Env,
+	ctx: ExecutionContext,
+	startTime: number,
+	corsHeaders: Record<string, string>
+): Promise<Response> {
+	if (request.method !== 'POST') {
+		return createErrorResponse('Method Not Allowed', 'method_not_allowed', 'Only POST method is allowed', 405, corsHeaders);
+	}
+	
+	// Verify authentication
+	if (!verifyAuth(request, env)) {
+		return createUnauthorizedResponse();
+	}
+	
+	try {
+		const codeReviewRequest: CodeReviewRequest = await request.json();
+		
+		// Validate request
+		validateCodeReviewRequest(codeReviewRequest);
+		
+		// Route to appropriate provider
+		const response = await routeCodeReview(codeReviewRequest, env);
+		
+		// Log the request
+		const sessionId = getSessionId(request);
+		const provider = codeReviewRequest.provider || 'gemini';
+		const responseTime = Date.now() - startTime;
+		
+		const logEntry = createLogEntry(
+			request.method,
+			'/v1/code/review',
+			provider,
+			codeReviewRequest.model || 'gemini-pro',
+			sessionId,
+			response.usage?.total_tokens,
+			responseTime,
+			200
+		);
+		
+		ctx.waitUntil(logRequest(env, logEntry));
+		
+		return new Response(JSON.stringify(response), {
+			status: 200,
+			headers: {
+				'Content-Type': 'application/json',
+				...corsHeaders,
+			},
+		});
+	} catch (error) {
+		console.error('Code review error:', error);
 		return createErrorResponse(
 			'Bad Request',
 			'invalid_request',
