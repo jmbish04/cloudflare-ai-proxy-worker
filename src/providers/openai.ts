@@ -4,6 +4,7 @@
 
 import { Env, ChatCompletionRequest, ChatCompletionResponse, CompletionRequest, CompletionResponse } from '../types.js';
 import { resolveModel } from '../config.js';
+import { convertChatToCompletion } from '../utils/tokens.js';
 
 /**
  * Handle chat completion using OpenAI API

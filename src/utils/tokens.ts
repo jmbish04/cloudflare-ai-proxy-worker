@@ -2,7 +2,7 @@
  * Token estimation utilities
  */
 
-import { TokenizeRequest, TokenizeResponse } from '../types';
+import { TokenizeRequest, TokenizeResponse, ChatCompletionResponse, CompletionResponse } from '../types';
 import { get_encoding } from 'tiktoken';
 
 /**
@@ -161,4 +161,28 @@ export function truncateToTokenLimit(text: string, model: string, maxTokens?: nu
   const targetLength = Math.floor(text.length * ratio * 0.9); // 10% buffer
   
   return text.substring(0, targetLength) + '...';
+}
+
+/**
+ * Convert chat completion response to text completion format
+ * This utility reduces code duplication across provider files
+ */
+export function convertChatToCompletion(
+  chatResponse: ChatCompletionResponse,
+  model: string
+): CompletionResponse {
+  const choice = chatResponse.choices[0];
+  
+  return {
+    id: `cmpl-${crypto.randomUUID()}`,
+    object: 'text_completion',
+    created: chatResponse.created,
+    model,
+    choices: [{
+      text: choice.message.content,
+      index: 0,
+      finish_reason: choice.finish_reason,
+    }],
+    usage: chatResponse.usage,
+  };
 }

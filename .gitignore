@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production
+/dist
+.worker-next
+
+# Generated files
+.wrangler/
+wrangler.toml
+
+# Runtime data
+*.log
+*.log.*
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS generated files
+Thumbs.db
+
+# Temporary files
+.tmp/
+tmp/
+temp/
