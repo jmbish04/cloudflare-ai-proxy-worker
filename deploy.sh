@@ -64,8 +64,14 @@ read -p "Do you want to set up D1 database for logging? (y/N): " setup_d1
 if [[ $setup_d1 =~ ^[Yy]$ ]]; then
     echo "Creating D1 database..."
     db_output=$(wrangler d1 create ai-proxy-logs --json)
-    # The following uses grep and cut. If you have `jq` installed, `jq -r '.uuid'` is a more robust option.
-    db_id=$(echo "$db_output" | grep -o '"uuid":"[^"]*"' | cut -d'"' -f4)
+    
+    # Use jq if available, otherwise fall back to grep/cut
+    if command -v jq &> /dev/null; then
+        db_id=$(echo "$db_output" | jq -r '.uuid')
+    else
+        # Fallback to grep and cut for systems without jq
+        db_id=$(echo "$db_output" | grep -o '"uuid":"[^"]*"' | cut -d'"' -f4)
+    fi
     
     if [ -n "$db_id" ]; then
         echo "✅ D1 database created with ID: $db_id"

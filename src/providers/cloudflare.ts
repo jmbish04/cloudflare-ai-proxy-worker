@@ -6,6 +6,28 @@ import { Env, ChatCompletionRequest, ChatCompletionResponse, CompletionRequest, 
 import { resolveModel } from '../config.js';
 import { estimateTokens, estimatePromptTokens } from '../utils/tokens.js';
 
+interface CloudflareAIResponse {
+  response?: string;
+  content?: string;
+  text?: string;
+  choices?: Array<{
+    message?: {
+      content?: string;
+    };
+  }>;
+}
+
+interface CloudflareAIRequest {
+  messages: Array<{
+    role: string;
+    content: string;
+  }>;
+  temperature?: number;
+  max_tokens?: number;
+  top_p?: number;
+  stream: boolean;
+}
+
 /**
  * Handle chat completion using Cloudflare Workers AI
  */
@@ -20,7 +42,7 @@ export async function handleCloudflareChat(
   const model = resolveModel('cloudflare', request.model);
   
   // Convert OpenAI format to Cloudflare AI format
-  const cfRequest = {
+  const cfRequest: CloudflareAIRequest = {
     messages: request.messages.map(msg => ({
       role: msg.role,
       content: msg.content,
@@ -33,7 +55,7 @@ export async function handleCloudflareChat(
   
   try {
     // Use type assertion for the AI binding since the exact type is complex
-    const response = await (env.AI as any).run(model as any, cfRequest);
+    const response = await (env.AI as any).run(model as any, cfRequest) as CloudflareAIResponse;
     
     // Convert Cloudflare AI response to OpenAI format with robust parsing
     let responseText: string;
