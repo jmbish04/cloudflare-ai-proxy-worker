@@ -6,6 +6,24 @@ import { Env, ChatCompletionRequest, ChatCompletionResponse, CompletionRequest, 
 import { resolveModel } from '../config.js';
 import { estimateTokens, estimatePromptTokens } from '../utils/tokens.js';
 
+interface GeminiRequest {
+  contents: GeminiMessage[];
+  generationConfig: {
+    temperature?: number;
+    maxOutputTokens?: number;
+    topP?: number;
+    stopSequences?: string[];
+  };
+  systemInstruction?: {
+    parts: Array<{ text: string }>;
+  };
+}
+
+interface GeminiMessage {
+  role: string;
+  parts: Array<{ text: string }>;
+}
+
 interface GeminiResponse {
   candidates?: Array<{
     content?: {
@@ -36,7 +54,7 @@ export async function handleGeminiChat(
   // Convert OpenAI format to Gemini format
   const conversionResult = convertToGeminiFormat(request.messages);
   
-  const geminiRequest: any = {
+  const geminiRequest: GeminiRequest = {
     contents: conversionResult.contents,
     generationConfig: {
       temperature: request.temperature,
@@ -148,8 +166,8 @@ export async function handleGeminiCompletion(
 /**
  * Convert OpenAI messages to Gemini format
  */
-function convertToGeminiFormat(messages: ChatMessage[]): { contents: any[], systemInstruction?: string } {
-  const geminiMessages: any[] = [];
+function convertToGeminiFormat(messages: ChatMessage[]): { contents: GeminiMessage[], systemInstruction?: string } {
+  const geminiMessages: GeminiMessage[] = [];
   let systemInstruction: string | undefined;
   
   for (const message of messages) {
