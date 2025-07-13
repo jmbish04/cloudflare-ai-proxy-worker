@@ -1,0 +1,23 @@
+{
+	"name": "ai-proxy-worker",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev",
+		"start": "wrangler dev",
+		"test": "vitest",
+		"cf-typegen": "wrangler types"
+	},
+	"devDependencies": {
+		"@cloudflare/vitest-pool-workers": "^0.8.19",
+		"typescript": "^5.5.2",
+		"vitest": "~3.2.0",
+		"wrangler": "^4.24.3"
+	},
+	"dependencies": {
+		"@cloudflare/workers-types": "^4.20250712.0",
+		"@google/generative-ai": "^0.24.1",
+		"tiktoken": "^1.0.21"
+	}
+}
