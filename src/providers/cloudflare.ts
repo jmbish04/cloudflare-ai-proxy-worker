@@ -32,8 +32,8 @@ export async function handleCloudflareChat(
   };
   
   try {
-    // Use type assertion for the AI binding since the exact type is complex
-    const response = await (env.AI as any).run(model as any, cfRequest);
+    // Use the properly typed AI binding
+    const response = await env.AI.run(model, cfRequest);
     
     // Convert Cloudflare AI response to OpenAI format with robust parsing
     let responseText: string;
