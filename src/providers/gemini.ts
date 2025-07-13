@@ -20,6 +20,32 @@ interface GeminiResponse {
   };
 }
 
+interface GeminiPart {
+  text: string;
+}
+
+interface GeminiSystemInstruction {
+  parts: GeminiPart[];
+}
+
+interface GeminiContent {
+  role: string;
+  parts: GeminiPart[];
+}
+
+interface GeminiGenerationConfig {
+  temperature?: number;
+  maxOutputTokens?: number;
+  topP?: number;
+  stopSequences?: string[];
+}
+
+interface GeminiRequest {
+  contents: GeminiContent[];
+  generationConfig?: GeminiGenerationConfig;
+  systemInstruction?: GeminiSystemInstruction;
+}
+
 /**
  * Handle chat completion using Google Gemini API
  */
@@ -36,7 +62,7 @@ export async function handleGeminiChat(
   // Convert OpenAI format to Gemini format
   const conversionResult = convertToGeminiFormat(request.messages);
   
-  const geminiRequest: any = {
+  const geminiRequest: GeminiRequest = {
     contents: conversionResult.contents,
     generationConfig: {
       temperature: request.temperature,
@@ -148,8 +174,8 @@ export async function handleGeminiCompletion(
 /**
  * Convert OpenAI messages to Gemini format
  */
-function convertToGeminiFormat(messages: ChatMessage[]): { contents: any[], systemInstruction?: string } {
-  const geminiMessages: any[] = [];
+function convertToGeminiFormat(messages: ChatMessage[]): { contents: GeminiContent[], systemInstruction?: string } {
+  const geminiMessages: GeminiContent[] = [];
   let systemInstruction: string | undefined;
   
   for (const message of messages) {
