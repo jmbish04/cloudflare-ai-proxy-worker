@@ -2,11 +2,11 @@
  * AI Router - Routes requests to appropriate AI providers
  */
 
-import { Env, ChatCompletionRequest, ChatCompletionResponse, CompletionRequest, CompletionResponse, AIProvider } from './types.js';
+import { Env, ChatCompletionRequest, ChatCompletionResponse, CompletionRequest, CompletionResponse, CodeReviewRequest, CodeReviewResponse, AIProvider } from './types.js';
 import { inferProvider, resolveModel, isModelSupported } from './config.js';
 import { handleCloudflareChat, handleCloudflareCompletion } from './providers/cloudflare.js';
 import { handleOpenAIChat, handleOpenAICompletion } from './providers/openai.js';
-import { handleGeminiChat, handleGeminiCompletion } from './providers/gemini.js';
+import { handleGeminiChat, handleGeminiCompletion, handleGeminiCodeReview } from './providers/gemini.js';
 
 /**
  * Route chat completion request to appropriate provider
@@ -67,6 +67,64 @@ export async function routeCompletion(
     
     default:
       throw new Error(`Unsupported provider: ${provider}`);
+  }
+}
+
+/**
+ * Route code review request to appropriate provider
+ */
+export async function routeCodeReview(
+  request: CodeReviewRequest,
+  env: Env
+): Promise<CodeReviewResponse> {
+  // Determine provider - default to Gemini for code reviews
+  const provider = request.provider || 'gemini';
+  
+  // Validate provider availability
+  if (!isProviderAvailable(provider, env)) {
+    throw new Error(`Provider ${provider} is not available or configured`);
+  }
+  
+  // For now, only support Gemini for code reviews
+  // Can be extended to support other providers in the future
+  switch (provider) {
+    case 'gemini':
+      return await handleGeminiCodeReview(request, env);
+    
+    default:
+      throw new Error(`Code review is not supported by provider: ${provider}. Please use 'gemini' provider.`);
+  }
+}
+
+/**
+ * Validate code review request parameters
+ */
+export function validateCodeReviewRequest(request: CodeReviewRequest): void {
+  if (!request.code || request.code.trim().length === 0) {
+    throw new Error('Code is required and cannot be empty');
+  }
+  
+  if (request.code.length > 50000) {
+    throw new Error('Code is too large. Maximum 50,000 characters allowed.');
+  }
+  
+  // Validate optional parameters
+  if (request.temperature !== undefined && (request.temperature < 0 || request.temperature > 1)) {
+    throw new Error('Temperature must be between 0 and 1');
+  }
+  
+  if (request.focus_areas && request.focus_areas.length > 10) {
+    throw new Error('Maximum 10 focus areas allowed');
+  }
+  
+  // Validate focus areas if provided
+  const validFocusAreas = ['style', 'performance', 'security', 'maintainability', 'correctness', 'best-practices'];
+  if (request.focus_areas) {
+    for (const area of request.focus_areas) {
+      if (!validFocusAreas.includes(area)) {
+        throw new Error(`Invalid focus area: ${area}. Valid areas: ${validFocusAreas.join(', ')}`);
+      }
+    }
   }
 }
 

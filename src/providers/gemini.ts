@@ -2,7 +2,7 @@
  * Google Gemini provider implementation
  */
 
-import { Env, ChatCompletionRequest, ChatCompletionResponse, CompletionRequest, CompletionResponse, ChatMessage } from '../types.js';
+import { Env, ChatCompletionRequest, ChatCompletionResponse, CompletionRequest, CompletionResponse, ChatMessage, CodeReviewRequest, CodeReviewResponse, CodeReviewComment } from '../types.js';
 import { resolveModel } from '../config.js';
 import { estimateTokens, estimatePromptTokens } from '../utils/tokens.js';
 
@@ -182,6 +182,165 @@ function convertToGeminiFormat(messages: ChatMessage[]): { contents: any[], syst
     contents: geminiMessages,
     systemInstruction,
   };
+}
+
+/**
+ * Handle code review using Google Gemini API
+ */
+export async function handleGeminiCodeReview(
+  request: CodeReviewRequest,
+  env: Env
+): Promise<CodeReviewResponse> {
+  if (!env.GEMINI_API_KEY) {
+    throw new Error('Gemini API key not configured');
+  }
+  
+  const model = resolveModel('gemini', request.model);
+  
+  // Create a detailed prompt for code review
+  const codeReviewPrompt = createCodeReviewPrompt(request);
+  
+  const chatRequest: ChatCompletionRequest = {
+    model: request.model || 'gemini-pro',
+    messages: [
+      {
+        role: 'system',
+        content: 'You are an expert code reviewer. Analyze the provided code and return a detailed review in the specified JSON format. Focus on code quality, security, performance, maintainability, and best practices.'
+      },
+      {
+        role: 'user',
+        content: codeReviewPrompt
+      }
+    ],
+    temperature: request.temperature || 0.3, // Lower temperature for more consistent reviews
+    max_tokens: 4000,
+  };
+  
+  try {
+    const chatResponse = await handleGeminiChat(chatRequest, env);
+    const reviewContent = chatResponse.choices[0]?.message?.content;
+    
+    if (!reviewContent) {
+      throw new Error('No review generated from Gemini');
+    }
+    
+    // Parse the structured review response
+    const parsedReview = parseCodeReviewResponse(reviewContent);
+    
+    return {
+      id: `review-${crypto.randomUUID()}`,
+      object: 'code.review',
+      created: Math.floor(Date.now() / 1000),
+      model: request.model || 'gemini-pro',
+      provider: 'gemini',
+      summary: parsedReview.summary,
+      overall_rating: parsedReview.overall_rating,
+      comments: parsedReview.comments,
+      usage: chatResponse.usage,
+    };
+  } catch (error) {
+    console.error('Gemini code review error:', error);
+    throw new Error(`Gemini code review error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Create a detailed prompt for code review
+ */
+function createCodeReviewPrompt(request: CodeReviewRequest): string {
+  const focusAreas = request.focus_areas?.join(', ') || 'all areas';
+  const language = request.language || 'unknown';
+  const filename = request.filename || 'code snippet';
+  const context = request.context ? `\n\nContext: ${request.context}` : '';
+  
+  return `Please review the following ${language} code from ${filename}:
+
+\`\`\`${language}
+${request.code}
+\`\`\`${context}
+
+Focus areas: ${focusAreas}
+
+Please provide a comprehensive code review in the following JSON format:
+
+{
+  "summary": "Brief summary of the code and overall assessment",
+  "overall_rating": "excellent|good|fair|needs-improvement",
+  "comments": [
+    {
+      "line": 5,
+      "severity": "warning|error|info|suggestion",
+      "category": "style|performance|security|maintainability|correctness|best-practices",
+      "message": "Description of the issue or observation",
+      "suggestion": "Optional suggestion for improvement"
+    }
+  ]
+}
+
+Guidelines:
+- Provide specific, actionable feedback
+- Include line numbers when possible (1-indexed)
+- Use appropriate severity levels
+- Focus on meaningful issues, not nitpicks
+- Suggest improvements where applicable
+- Consider security, performance, maintainability, and best practices
+- Keep suggestions constructive and helpful
+
+Return only the JSON response, no additional text.`;
+}
+
+/**
+ * Parse the code review response from Gemini
+ */
+function parseCodeReviewResponse(content: string): {
+  summary: string;
+  overall_rating: 'excellent' | 'good' | 'fair' | 'needs-improvement';
+  comments: CodeReviewComment[];
+} {
+  try {
+    // Try to extract JSON from the response
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('No JSON found in response');
+    }
+    
+    const parsed = JSON.parse(jsonMatch[0]);
+    
+    // Validate and sanitize the response
+    const summary = parsed.summary || 'Code review completed';
+    const overall_rating = ['excellent', 'good', 'fair', 'needs-improvement'].includes(parsed.overall_rating) 
+      ? parsed.overall_rating 
+      : 'fair';
+    
+    const comments: CodeReviewComment[] = Array.isArray(parsed.comments) 
+      ? parsed.comments.map((comment: any) => ({
+          line: typeof comment.line === 'number' ? comment.line : undefined,
+          severity: ['info', 'warning', 'error', 'suggestion'].includes(comment.severity) 
+            ? comment.severity 
+            : 'info',
+          category: ['style', 'performance', 'security', 'maintainability', 'correctness', 'best-practices'].includes(comment.category)
+            ? comment.category
+            : 'best-practices',
+          message: comment.message || 'No message provided',
+          suggestion: comment.suggestion || undefined,
+        }))
+      : [];
+    
+    return { summary, overall_rating, comments };
+  } catch (error) {
+    console.error('Failed to parse code review response:', error);
+    
+    // Fallback: create a basic review from the raw content
+    return {
+      summary: content.substring(0, 200) + (content.length > 200 ? '...' : ''),
+      overall_rating: 'fair',
+      comments: [{
+        severity: 'info',
+        category: 'best-practices',
+        message: 'Automated parsing failed. Raw review: ' + content.substring(0, 500),
+      }],
+    };
+  }
 }
 
 /**
