@@ -72,7 +72,7 @@ export async function handleOpenAICompletion(
   const model = resolveModel('openai', request.model);
   
   // Use chat completions API for better results with newer models
-  if (model.indexOf('gpt-') === 0) {
+  if (model.startsWith('gpt-')) {
     // Convert to chat format
     const chatRequest: ChatCompletionRequest = {
       model: request.model,
