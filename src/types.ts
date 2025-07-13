@@ -14,7 +14,7 @@ export interface Env {
   DB?: D1Database;
 
   // Cloudflare AI binding
-  AI?: AI;
+  AI?: Ai;
 }
 
 export type AIProvider = 'cloudflare' | 'openai' | 'gemini';
@@ -132,4 +132,35 @@ export interface LogEntry {
   tokens_used?: number;
   response_time: number;
   status: number;
+}
+
+export interface GeminiRequest {
+  model?: string;
+  contents: Array<{
+    role: string;
+    parts: Array<{ text: string }>;
+  }>;
+  systemInstruction?: {
+    parts: Array<{ text: string }>;
+  };
+  generationConfig?: {
+    temperature?: number;
+    maxOutputTokens?: number;
+    topP?: number;
+    stopSequences?: string[];
+  };
+}
+
+export interface GeminiResponse {
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{ text?: string }>;
+    };
+    finishReason?: string;
+  }>;
+  usageMetadata?: {
+    promptTokenCount?: number;
+    candidatesTokenCount?: number;
+    totalTokenCount?: number;
+  };
 }
