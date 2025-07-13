@@ -14,7 +14,7 @@ export interface Env {
   DB?: D1Database;
 
   // Cloudflare AI binding
-  AI?: AI;
+  AI?: Ai;
 }
 
 export type AIProvider = 'cloudflare' | 'openai' | 'gemini';
