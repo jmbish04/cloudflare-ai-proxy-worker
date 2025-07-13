@@ -1,0 +1,15 @@
+name = "ai-proxy-worker"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# Default environment variables
+AUTH_TYPE = "header" # or "none"
+
+# These would be set as secrets in production
+# OPENAI_API_KEY = ""
+# GEMINI_API_KEY = ""
+# CLOUDFLARE_ACCOUNT_ID = ""
+# CLOUDFLARE_API_TOKEN = ""
+# X_AUTH_TOKEN = ""

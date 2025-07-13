@@ -31,7 +31,7 @@ export function estimateTokens(text: string, model?: string): number {
       return tokens.length;
     }
   } catch (error) {
-    // If tiktoken fails, fall back to estimation
+    // If tiktoken fails (e.g., in test environment), fall back to estimation
     console.warn('Failed to use tiktoken, falling back to estimation:', error);
   }
   
