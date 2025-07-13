@@ -2,14 +2,6 @@
  * Type definitions for the AI Proxy Worker
  */
 
-/**
- * Type definitions for the AI Proxy Worker
- */
-
-/**
- * Type definitions for the AI Proxy Worker
- */
-
 export interface Env {
   // Optional AI service API keys
   OPENAI_API_KEY?: string;
@@ -19,10 +11,10 @@ export interface Env {
   AUTH_TOKEN?: string;
   
   // Optional D1 database binding for logging
-DB?: D1Database;
+  DB?: D1Database;
 
-// Cloudflare AI binding
-AI?: AI;
+  // Cloudflare AI binding
+  AI?: AI;
 }
 
 export type AIProvider = 'cloudflare' | 'openai' | 'gemini';

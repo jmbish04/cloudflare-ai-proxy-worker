@@ -64,8 +64,8 @@ read -p "Do you want to set up D1 database for logging? (y/N): " setup_d1
 if [[ $setup_d1 =~ ^[Yy]$ ]]; then
     echo "Creating D1 database..."
     db_output=$(wrangler d1 create ai-proxy-logs --json)
-# The following uses grep and cut. If you have `jq` installed, `jq -r '.uuid'` is a more robust option.
-db_id=$(echo "$db_output" | grep -o '"uuid":"[^"]*"' | cut -d'"' -f4)
+    # The following uses grep and cut. If you have `jq` installed, `jq -r '.uuid'` is a more robust option.
+    db_id=$(echo "$db_output" | grep -o '"uuid":"[^"]*"' | cut -d'"' -f4)
     
     if [ -n "$db_id" ]; then
         echo "✅ D1 database created with ID: $db_id"
@@ -89,12 +89,12 @@ fi
 echo ""
 echo "🎉 Deployment complete!"
 echo ""
-echo "📡 Your AI proxy is now available at:"
-echo "https://ai-proxy-worker.${USER}.workers.dev"
+echo "📡 Your AI proxy is now available."
+echo "💡 Check your Cloudflare dashboard for the correct workers.dev URL."
 echo ""
-echo "🔍 Test endpoints:"
-echo "  Health check: https://ai-proxy-worker.${USER}.workers.dev/health"
-echo "  Model options: https://ai-proxy-worker.${USER}.workers.dev/v1/model-options"
-echo "  Route check: https://ai-proxy-worker.${USER}.workers.dev/v1/route-check"
+echo "🔍 Test endpoints (replace with your actual worker URL):"
+echo "  Health check: https://your-worker-name.your-subdomain.workers.dev/health"
+echo "  Model options: https://your-worker-name.your-subdomain.workers.dev/v1/model-options"
+echo "  Route check: https://your-worker-name.your-subdomain.workers.dev/v1/route-check"
 echo ""
 echo "📚 See README.md for API usage examples"

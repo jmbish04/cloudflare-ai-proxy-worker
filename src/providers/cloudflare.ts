@@ -4,6 +4,7 @@
 
 import { Env, ChatCompletionRequest, ChatCompletionResponse, CompletionRequest, CompletionResponse, ChatMessage } from '../types.js';
 import { resolveModel } from '../config.js';
+import { estimateTokens, estimatePromptTokens } from '../utils/tokens.js';
 
 /**
  * Handle chat completion using Cloudflare Workers AI
@@ -110,25 +111,4 @@ export async function handleCloudflareCompletion(
     console.error('Cloudflare AI completion error:', error);
     throw new Error(`Cloudflare AI error: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
-}
-
-/**
- * Estimate tokens for prompt messages
- */
-function estimatePromptTokens(messages: ChatMessage[]): number {
-  let total = 0;
-  for (const message of messages) {
-    total += estimateTokens(message.content);
-    total += 4; // Overhead for message formatting
-  }
-  return total;
-}
-
-/**
- * Simple token estimation
- */
-function estimateTokens(text: string): number {
-  if (!text) return 0;
-  // Rough estimation: 4 characters per token
-  return Math.ceil(text.length / 4);
 }

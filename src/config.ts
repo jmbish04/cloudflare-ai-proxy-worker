@@ -48,17 +48,17 @@ export function resolveModel(provider: AIProvider, model?: string): string {
  */
 export function inferProvider(model: string): AIProvider {
   // Check Cloudflare models (they start with @cf/)
-  if (model.indexOf('@cf/') === 0) {
+  if (model.startsWith('@cf/')) {
     return 'cloudflare';
   }
   
   // Check OpenAI models
-if (model.startsWith('gpt-')) {
+  if (model.startsWith('gpt-')) {
     return 'openai';
   }
   
   // Check Gemini models
-  if (model.indexOf('gemini') !== -1) {
+  if (model.includes('gemini')) {
     return 'gemini';
   }
   

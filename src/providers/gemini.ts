@@ -4,6 +4,7 @@
 
 import { Env, ChatCompletionRequest, ChatCompletionResponse, CompletionRequest, CompletionResponse, ChatMessage } from '../types.js';
 import { resolveModel } from '../config.js';
+import { estimateTokens, estimatePromptTokens } from '../utils/tokens.js';
 
 interface GeminiResponse {
   candidates?: Array<{
@@ -46,12 +47,13 @@ export async function handleGeminiChat(
   };
   
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
     
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-goog-api-key': env.GEMINI_API_KEY,
       },
       body: JSON.stringify(geminiRequest),
     });
@@ -178,25 +180,4 @@ function mapGeminiFinishReason(geminiReason?: string): 'stop' | 'length' | 'cont
     default:
       return null;
   }
-}
-
-/**
- * Estimate tokens for prompt messages
- */
-function estimatePromptTokens(messages: ChatMessage[]): number {
-  let total = 0;
-  for (const message of messages) {
-    total += estimateTokens(message.content);
-    total += 4; // Overhead for message formatting
-  }
-  return total;
-}
-
-/**
- * Simple token estimation
- */
-function estimateTokens(text: string): number {
-  if (!text) return 0;
-  // Rough estimation: 4 characters per token
-  return Math.ceil(text.length / 4);
 }

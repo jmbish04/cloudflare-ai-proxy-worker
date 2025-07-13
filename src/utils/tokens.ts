@@ -3,47 +3,70 @@
  */
 
 import { TokenizeRequest, TokenizeResponse } from '../types';
+import { get_encoding } from 'tiktoken';
 
 /**
- * Estimate token count for text input
- * This is a simplified estimation - in production you might want to use tiktoken
+ * Estimate token count for text input using tiktoken for accurate counting
  */
 export function estimateTokens(text: string, model?: string): number {
-  // Simple token estimation based on word count and characters
-  // This is a rough approximation - real implementations would use tiktoken
-  
-  // Basic tokenization rules:
-  // - Average 4 characters per token for English text
-  // - Add tokens for punctuation and special characters
-  // - Account for different model tokenization schemes
-  
   if (!text || text.length === 0) {
     return 0;
   }
   
-  // Count words
-  const words = text.split(/\s+/).filter(word => word.length > 0);
+  // Use tiktoken for accurate token counting when possible
+  try {
+    // For OpenAI models, use tiktoken for accurate counting
+    if (model && (model.includes('gpt') || model.startsWith('gpt-'))) {
+      let encoding;
+      if (model.includes('gpt-4')) {
+        encoding = get_encoding('cl100k_base'); // GPT-4 uses cl100k_base
+      } else if (model.includes('gpt-3.5') || model.includes('gpt-35')) {
+        encoding = get_encoding('cl100k_base'); // GPT-3.5-turbo also uses cl100k_base
+      } else {
+        encoding = get_encoding('cl100k_base'); // Default for modern OpenAI models
+      }
+      
+      const tokens = encoding.encode(text);
+      encoding.free(); // Important: free the encoding to prevent memory leaks
+      return tokens.length;
+    }
+  } catch (error) {
+    // If tiktoken fails, fall back to estimation
+    console.warn('Failed to use tiktoken, falling back to estimation:', error);
+  }
   
-  // Estimate tokens
+  // For non-OpenAI models or when tiktoken fails, use improved estimation
+  return fallbackTokenEstimation(text);
+}
+
+/**
+ * Fallback token estimation for non-OpenAI models
+ */
+function fallbackTokenEstimation(text: string): number {
+  // More accurate estimation based on linguistic patterns
+  const words = text.split(/\s+/).filter(word => word.length > 0);
   let tokens = 0;
   
   for (const word of words) {
-    // Most words are 1 token, longer words might be split
-    if (word.length <= 4) {
+    // Improved word-to-token mapping
+    if (word.length <= 3) {
       tokens += 1;
-    } else {
+    } else if (word.length <= 8) {
       tokens += Math.ceil(word.length / 4);
+    } else {
+      // Long words are typically split into multiple tokens
+      tokens += Math.ceil(word.length / 3.5);
     }
   }
   
-  // Add tokens for punctuation and special characters
-  const specialChars = text.match(/[^\w\s]/g);
-  if (specialChars) {
-    tokens += specialChars.length * 0.5; // Punctuation is usually partial tokens
+  // Account for punctuation and special characters
+  const punctuation = text.match(/[^\w\s]/g);
+  if (punctuation) {
+    tokens += Math.ceil(punctuation.length * 0.7);
   }
   
-  // Add buffer for tokenizer overhead
-  tokens = Math.ceil(tokens * 1.1);
+  // Add overhead for formatting
+  tokens = Math.ceil(tokens * 1.15);
   
   return tokens;
 }
@@ -66,6 +89,18 @@ export function estimateTokensForChat(messages: Array<{ role: string; content: s
   totalTokens += 3; // For chat completion wrapper
   
   return totalTokens;
+}
+
+/**
+ * Estimate tokens for prompt messages (for use in provider files)
+ */
+export function estimatePromptTokens(messages: Array<{ role: string; content: string }>, model?: string): number {
+  let total = 0;
+  for (const message of messages) {
+    total += estimateTokens(message.content, model);
+    total += 4; // Overhead for message formatting
+  }
+  return total;
 }
 
 /**
