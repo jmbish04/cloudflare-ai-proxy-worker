@@ -4,7 +4,7 @@
 
 import { Env, ChatCompletionRequest, ChatCompletionResponse, CompletionRequest, CompletionResponse, ChatMessage } from '../types.js';
 import { resolveModel } from '../config.js';
-import { estimateTokens, estimatePromptTokens } from '../utils/tokens.js';
+import { estimateTokens, estimatePromptTokens, convertChatToCompletion } from '../utils/tokens.js';
 
 interface GeminiResponse {
   candidates?: Array<{
@@ -128,21 +128,8 @@ export async function handleGeminiCompletion(
   
   const chatResponse = await handleGeminiChat(chatRequest, env);
   
-  // Convert chat response to completion format
-  const choice = chatResponse.choices[0];
-  
-  return {
-    id: `cmpl-${crypto.randomUUID()}`,
-    object: 'text_completion',
-    created: chatResponse.created,
-    model: request.model,
-    choices: [{
-      text: choice.message.content,
-      index: 0,
-      finish_reason: choice.finish_reason,
-    }],
-    usage: chatResponse.usage,
-  };
+  // Convert chat response to completion format using utility
+  return convertChatToCompletion(chatResponse, request.model);
 }
 
 /**

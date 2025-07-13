@@ -4,7 +4,7 @@
 
 import { Env, ChatCompletionRequest, ChatCompletionResponse, CompletionRequest, CompletionResponse, ChatMessage } from '../types.js';
 import { resolveModel } from '../config.js';
-import { estimateTokens, estimatePromptTokens } from '../utils/tokens.js';
+import { estimateTokens, estimatePromptTokens, convertChatToCompletion } from '../utils/tokens.js';
 
 /**
  * Handle chat completion using Cloudflare Workers AI
@@ -112,21 +112,8 @@ export async function handleCloudflareCompletion(
   try {
     const chatResponse = await handleCloudflareChat(chatRequest, env);
     
-    // Convert chat response to completion format
-    const choice = chatResponse.choices[0];
-    
-    return {
-      id: `cmpl-${crypto.randomUUID()}`,
-      object: 'text_completion',
-      created: Math.floor(Date.now() / 1000),
-      model: request.model,
-      choices: [{
-        text: choice.message.content,
-        index: 0,
-        finish_reason: choice.finish_reason,
-      }],
-      usage: chatResponse.usage,
-    };
+    // Convert chat response to completion format using utility
+    return convertChatToCompletion(chatResponse, request.model);
   } catch (error) {
     console.error('Cloudflare AI completion error:', error);
     throw new Error(`Cloudflare AI error: ${error instanceof Error ? error.message : 'Unknown error'}`);
