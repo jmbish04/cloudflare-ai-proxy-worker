@@ -36,6 +36,11 @@ export async function handleGeminiChat(
   // Convert OpenAI format to Gemini format
   const conversionResult = convertToGeminiFormat(request.messages);
   
+  // Validate that we have at least one content message
+  if (conversionResult.contents.length === 0) {
+    throw new Error('At least one non-system message is required for Gemini');
+  }
+  
   const geminiRequest: any = {
     contents: conversionResult.contents,
     generationConfig: {
@@ -54,7 +59,7 @@ export async function handleGeminiChat(
   }
   
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+    const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent`;
     
     const response = await fetch(url, {
       method: 'POST',
@@ -67,7 +72,19 @@ export async function handleGeminiChat(
     
     if (!response.ok) {
       const errorData = await response.text();
-      throw new Error(`Gemini API error: ${response.status} ${errorData}`);
+      let errorMessage = `Gemini API error: ${response.status}`;
+      
+      try {
+        const errorJson = JSON.parse(errorData);
+        if (errorJson.error?.message) {
+          errorMessage = `Gemini API error: ${errorJson.error.message}`;
+        }
+      } catch {
+        // If parsing fails, use the raw error data
+        errorMessage = `Gemini API error: ${response.status} ${errorData}`;
+      }
+      
+      throw new Error(errorMessage);
     }
     
     const data = await response.json() as GeminiResponse;
@@ -153,13 +170,18 @@ function convertToGeminiFormat(messages: ChatMessage[]): { contents: any[], syst
   let systemInstruction: string | undefined;
   
   for (const message of messages) {
+    // Skip messages with empty or whitespace-only content
+    if (!message.content || message.content.trim() === '') {
+      continue;
+    }
+    
     // Handle system messages with proper system instruction
     if (message.role === 'system') {
       // Combine multiple system messages if present
       if (systemInstruction) {
-        systemInstruction += '\n\n' + message.content;
+        systemInstruction += '\n\n' + message.content.trim();
       } else {
-        systemInstruction = message.content;
+        systemInstruction = message.content.trim();
       }
       continue; // Don't add system messages to contents
     }
@@ -173,7 +195,7 @@ function convertToGeminiFormat(messages: ChatMessage[]): { contents: any[], syst
     geminiMessages.push({
       role,
       parts: [{
-        text: message.content,
+        text: message.content.trim(),
       }],
     });
   }
@@ -195,7 +217,11 @@ function mapGeminiFinishReason(geminiReason?: string): 'stop' | 'length' | 'cont
       return 'length';
     case 'SAFETY':
     case 'RECITATION':
+    case 'PROHIBITED_CONTENT':
       return 'content_filter';
+    case 'FINISH_REASON_UNSPECIFIED':
+    case 'OTHER':
+      return null;
     default:
       return null;
   }
