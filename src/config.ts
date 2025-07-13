@@ -53,7 +53,7 @@ export function inferProvider(model: string): AIProvider {
   }
   
   // Check OpenAI models
-  if (model.indexOf('gpt-') === 0 || model.indexOf('gpt') !== -1) {
+if (model.startsWith('gpt-')) {
     return 'openai';
   }
   
