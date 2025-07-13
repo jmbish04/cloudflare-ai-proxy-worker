@@ -3,6 +3,34 @@
  */
 
 import { Env, LogEntry, AIProvider } from '../types.js';
+
+// D1 Database result interfaces
+interface D1PreparedStatement {
+  bind(...values: unknown[]): D1PreparedStatement;
+  first(): Promise<D1Row | null>;
+  all(): Promise<D1ResultSet>;
+}
+
+interface D1Row {
+  [key: string]: unknown;
+}
+
+interface D1ResultSet {
+  results: D1Row[];
+  success: boolean;
+}
+
+// Logging statistics interfaces
+interface LogStats {
+  total_requests: number;
+  total_tokens: number;
+  avg_response_time: number;
+}
+
+interface ProviderCount {
+  provider: string;
+  count: number;
+}
 import { CONFIG } from '../config.js';
 
 /**
@@ -125,7 +153,7 @@ export async function getRecentLogs(
   
   try {
     let query = 'SELECT * FROM logs';
-    const params: any[] = [];
+    const params: unknown[] = [];
     const conditions: string[] = [];
     
     if (provider) {
@@ -186,7 +214,7 @@ export async function getUsageStats(
         AVG(response_time) as avg_response_time
       FROM logs 
       WHERE timestamp > ?
-    `).bind(timeThreshold).first() as any;
+    `).bind(timeThreshold).first() as LogStats;
     
     // Get provider breakdown
     const providerResult = await env.DB.prepare(`
@@ -202,7 +230,7 @@ export async function getUsageStats(
       gemini: 0,
     };
     
-    for (const row of providerResult.results as any[]) {
+    for (const row of providerResult.results as ProviderCount[]) {
       if (row.provider in providerBreakdown) {
         providerBreakdown[row.provider as AIProvider] = row.count;
       }
