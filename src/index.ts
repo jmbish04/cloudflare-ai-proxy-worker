@@ -5,7 +5,7 @@
  * to different AI providers including Cloudflare Workers AI, OpenAI, and Gemini.
  */
 
-import { Env, ChatCompletionRequest, CompletionRequest, TokenizeRequest, ModelOptionsResponse, RouteCheckResponse, ErrorResponse } from './types.js';
+import { Env, ChatCompletionRequest, CompletionRequest, TokenizeRequest, ModelOptionsResponse, RouteCheckResponse, ErrorResponse, GeminiRequest, GeminiResponse } from './types.js';
 import { CONFIG, resolveModel, inferProvider, getAllModels } from './config.js';
 import { verifyAuth, createUnauthorizedResponse, createCorsHeaders, getSessionId } from './utils/auth.js';
 import { estimateTokens, handleTokenizeRequest } from './utils/tokens.js';
@@ -40,6 +40,9 @@ export default {
 				
 				case '/v1/completions':
 					return await handleCompletions(request, env, ctx, startTime, corsHeaders);
+				
+				case '/gemini':
+					return await handleGemini(request, env, ctx, startTime, corsHeaders);
 				
 				case '/v1/tokenize':
 					return await handleTokenize(request, env, ctx, startTime, corsHeaders);
@@ -271,6 +274,109 @@ async function handleTokenize(
 }
 
 /**
+ * Handle /gemini endpoint - Direct Gemini API access
+ */
+async function handleGemini(
+	request: Request,
+	env: Env,
+	ctx: ExecutionContext,
+	startTime: number,
+	corsHeaders: Record<string, string>
+): Promise<Response> {
+	if (request.method !== 'POST') {
+		return createErrorResponse('Method Not Allowed', 'method_not_allowed', 'Only POST method is allowed', 405, corsHeaders);
+	}
+	
+	// Verify authentication
+	if (!verifyAuth(request, env)) {
+		return createUnauthorizedResponse();
+	}
+	
+	// Check if Gemini is available
+	if (!env.GEMINI_API_KEY) {
+		return createErrorResponse(
+			'Service Unavailable',
+			'service_unavailable',
+			'Gemini API key not configured',
+			503,
+			corsHeaders
+		);
+	}
+	
+	try {
+		const geminiRequest: GeminiRequest = await request.json();
+		
+		// Validate basic structure
+		if (!geminiRequest.contents || !Array.isArray(geminiRequest.contents)) {
+			throw new Error('Request must include "contents" array');
+		}
+		
+		// Validate contents structure
+		for (const content of geminiRequest.contents) {
+			if (!content.role || !content.parts || !Array.isArray(content.parts)) {
+				throw new Error('Each content must have a role and parts array');
+			}
+		}
+		
+		// Use default model if not specified
+		const model = geminiRequest.model || 'gemini-pro';
+		
+		// Forward request directly to Gemini API
+		const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+		
+		const response = await fetch(url, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'x-goog-api-key': env.GEMINI_API_KEY,
+			},
+			body: JSON.stringify(geminiRequest),
+		});
+		
+		if (!response.ok) {
+			const errorData = await response.text();
+			throw new Error(`Gemini API error: ${response.status} ${errorData}`);
+		}
+		
+		const responseData: GeminiResponse = await response.json();
+		
+		// Log the request
+		const sessionId = getSessionId(request);
+		const responseTime = Date.now() - startTime;
+		
+		const logEntry = createLogEntry(
+			request.method,
+			'/gemini',
+			'gemini',
+			model,
+			sessionId,
+			responseData.usageMetadata?.totalTokenCount,
+			responseTime,
+			200
+		);
+		
+		ctx.waitUntil(logRequest(env, logEntry));
+		
+		return new Response(JSON.stringify(responseData), {
+			status: 200,
+			headers: {
+				'Content-Type': 'application/json',
+				...corsHeaders,
+			},
+		});
+	} catch (error) {
+		console.error('Gemini endpoint error:', error);
+		return createErrorResponse(
+			'Bad Request',
+			'invalid_request',
+			error instanceof Error ? error.message : 'Invalid request',
+			400,
+			corsHeaders
+		);
+	}
+}
+
+/**
  * Handle /v1/model-options endpoint
  */
 async function handleModelOptions(
@@ -432,6 +538,15 @@ async function handleHealth(
 		status: 'healthy',
 		timestamp: Date.now(),
 		version: '1.0.0',
+		endpoints: [
+			'/v1/chat/completions',
+			'/v1/completions',
+			'/gemini',
+			'/v1/tokenize',
+			'/v1/model-options',
+			'/v1/route-check',
+			'/health'
+		],
 		providers: {
 			cloudflare: isProviderAvailable('cloudflare', env),
 			openai: isProviderAvailable('openai', env),
