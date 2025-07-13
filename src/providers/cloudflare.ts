@@ -2,7 +2,7 @@
  * Cloudflare Workers AI provider implementation
  */
 
-import { Env, ChatCompletionRequest, ChatCompletionResponse, CompletionRequest, CompletionResponse, ChatMessage } from '../types.js';
+import { Env, ChatCompletionRequest, ChatCompletionResponse, CompletionRequest, CompletionResponse, ChatMessage, CloudflareAIRequest, CloudflareAIResponse } from '../types.js';
 import { resolveModel } from '../config.js';
 import { estimateTokens, estimatePromptTokens } from '../utils/tokens.js';
 
@@ -20,7 +20,7 @@ export async function handleCloudflareChat(
   const model = resolveModel('cloudflare', request.model);
   
   // Convert OpenAI format to Cloudflare AI format
-  const cfRequest = {
+  const cfRequest: CloudflareAIRequest = {
     messages: request.messages.map(msg => ({
       role: msg.role,
       content: msg.content,
@@ -32,8 +32,8 @@ export async function handleCloudflareChat(
   };
   
   try {
-    // Use type assertion for the AI binding since the exact type is complex
-    const response = await (env.AI as any).run(model as any, cfRequest);
+    // Use proper type for the AI binding
+    const response = await env.AI.run(model, cfRequest);
     
     // Convert Cloudflare AI response to OpenAI format with robust parsing
     let responseText: string;
