@@ -5,6 +5,17 @@
 import { Env, LogEntry, AIProvider } from '../types.js';
 import { CONFIG } from '../config.js';
 
+interface D1StatsResult {
+  total_requests: number;
+  total_tokens: number;
+  avg_response_time: number;
+}
+
+interface D1ProviderRow {
+  provider: string;
+  count: number;
+}
+
 /**
  * Create a log entry
  */
@@ -125,7 +136,7 @@ export async function getRecentLogs(
   
   try {
     let query = 'SELECT * FROM logs';
-    const params: any[] = [];
+    const params: (string | number)[] = [];
     const conditions: string[] = [];
     
     if (provider) {
@@ -186,7 +197,7 @@ export async function getUsageStats(
         AVG(response_time) as avg_response_time
       FROM logs 
       WHERE timestamp > ?
-    `).bind(timeThreshold).first() as any;
+    `).bind(timeThreshold).first() as D1StatsResult | null;
     
     // Get provider breakdown
     const providerResult = await env.DB.prepare(`
@@ -202,7 +213,7 @@ export async function getUsageStats(
       gemini: 0,
     };
     
-    for (const row of providerResult.results as any[]) {
+    for (const row of providerResult.results as D1ProviderRow[]) {
       if (row.provider in providerBreakdown) {
         providerBreakdown[row.provider as AIProvider] = row.count;
       }
