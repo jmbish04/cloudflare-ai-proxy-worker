@@ -56,7 +56,6 @@ export default {
 				
 				default:
 					return createErrorResponse(
-						'Not Found',
 						'not_found',
 						'The requested endpoint was not found',
 						404,
@@ -66,7 +65,6 @@ export default {
 		} catch (error) {
 			console.error('Worker error:', error);
 			return createErrorResponse(
-				'Internal Server Error',
 				'internal_error',
 				error instanceof Error ? error.message : 'An unexpected error occurred',
 				500,
@@ -87,7 +85,7 @@ async function handleChatCompletions(
 	corsHeaders: Record<string, string>
 ): Promise<Response> {
 	if (request.method !== 'POST') {
-		return createErrorResponse('Method Not Allowed', 'method_not_allowed', 'Only POST method is allowed', 405, corsHeaders);
+		return createErrorResponse('method_not_allowed', 'Only POST method is allowed', 405, corsHeaders);
 	}
 	
 	// Verify authentication
@@ -132,7 +130,6 @@ async function handleChatCompletions(
 	} catch (error) {
 		console.error('Chat completions error:', error);
 		return createErrorResponse(
-			'Bad Request',
 			'invalid_request',
 			error instanceof Error ? error.message : 'Invalid request',
 			400,
@@ -152,7 +149,7 @@ async function handleCompletions(
 	corsHeaders: Record<string, string>
 ): Promise<Response> {
 	if (request.method !== 'POST') {
-		return createErrorResponse('Method Not Allowed', 'method_not_allowed', 'Only POST method is allowed', 405, corsHeaders);
+		return createErrorResponse('method_not_allowed', 'Only POST method is allowed', 405, corsHeaders);
 	}
 	
 	// Verify authentication
@@ -217,7 +214,7 @@ async function handleTokenize(
 	corsHeaders: Record<string, string>
 ): Promise<Response> {
 	if (request.method !== 'POST') {
-		return createErrorResponse('Method Not Allowed', 'method_not_allowed', 'Only POST method is allowed', 405, corsHeaders);
+		return createErrorResponse('method_not_allowed', 'Only POST method is allowed', 405, corsHeaders);
 	}
 	
 	// Verify authentication
@@ -453,15 +450,14 @@ async function handleHealth(
  * Create a standardized error response
  */
 function createErrorResponse(
-	message: string,
 	type: string,
-	detail: string,
+	message: string,
 	status: number,
 	corsHeaders: Record<string, string>
 ): Response {
 	const errorResponse: ErrorResponse = {
 		error: {
-			message: detail,
+			message,
 			type,
 			code: type,
 		},

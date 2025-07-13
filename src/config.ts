@@ -58,7 +58,7 @@ export function inferProvider(model: string): AIProvider {
   }
   
   // Check Gemini models
-  if (model.includes('gemini')) {
+  if (model.startsWith('gemini-')) {
     return 'gemini';
   }
   
