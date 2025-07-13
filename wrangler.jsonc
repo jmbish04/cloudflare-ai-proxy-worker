@@ -1,0 +1,20 @@
+{
+  "name": "ai-proxy-worker",
+  "compatibility_date": "2025-07-13",
+  "main": "src/index.ts",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "env": {
+    "production": {
+      "vars": {
+        "ENVIRONMENT": "production"
+      }
+    },
+    "staging": {
+      "vars": {
+        "ENVIRONMENT": "staging"
+      }
+    }
+  }
+}
