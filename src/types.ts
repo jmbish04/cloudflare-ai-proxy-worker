@@ -133,3 +133,48 @@ export interface LogEntry {
   response_time: number;
   status: number;
 }
+
+// Gemini API specific types
+export interface GeminiPart {
+  text?: string;
+}
+
+export interface GeminiContent {
+  role: 'user' | 'model';
+  parts: GeminiPart[];
+}
+
+export interface GeminiSystemInstruction {
+  parts: GeminiPart[];
+}
+
+export interface GeminiGenerationConfig {
+  temperature?: number;
+  maxOutputTokens?: number;
+  topP?: number;
+  stopSequences?: string[];
+}
+
+export interface GeminiRequest {
+  contents: GeminiContent[];
+  systemInstruction?: GeminiSystemInstruction;
+  generationConfig?: GeminiGenerationConfig;
+}
+
+export interface GeminiCandidate {
+  content?: {
+    parts?: GeminiPart[];
+  };
+  finishReason?: string;
+}
+
+export interface GeminiUsageMetadata {
+  promptTokenCount?: number;
+  candidatesTokenCount?: number;
+  totalTokenCount?: number;
+}
+
+export interface GeminiResponse {
+  candidates?: GeminiCandidate[];
+  usageMetadata?: GeminiUsageMetadata;
+}
