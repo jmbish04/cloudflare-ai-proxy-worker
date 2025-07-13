@@ -461,7 +461,7 @@ function createErrorResponse(
 ): Response {
 	const errorResponse: ErrorResponse = {
 		error: {
-			message,
+			message: detail,
 			type,
 			code: type,
 		},
