@@ -63,24 +63,32 @@ fi
 read -p "Do you want to set up D1 database for logging? (y/N): " setup_d1
 if [[ $setup_d1 =~ ^[Yy]$ ]]; then
     echo "Creating D1 database..."
-    db_output=$(wrangler d1 create ai-proxy-logs --json)
-    # The following uses grep and cut. If you have `jq` installed, `jq -r '.uuid'` is a more robust option.
-    db_id=$(echo "$db_output" | grep -o '"uuid":"[^"]*"' | cut -d'"' -f4)
     
-    if [ -n "$db_id" ]; then
+    # Check if jq is available
+    if ! command -v jq &> /dev/null; then
+        echo "⚠️  jq is not installed. Please install jq for robust JSON parsing:"
+        echo "   sudo apt-get install jq  # Ubuntu/Debian"
+        echo "   brew install jq          # macOS"
+        echo ""
+        echo "Using fallback parsing method..."
+        db_output=$(wrangler d1 create ai-proxy-logs --json)
+        db_id=$(echo "$db_output" | grep -o '"uuid":"[^"]*"' | cut -d'"' -f4)
+    else
+        db_output=$(wrangler d1 create ai-proxy-logs --json)
+        db_id=$(echo "$db_output" | jq -r '.uuid')
+    fi
+    
+    if [ -n "$db_id" ] && [ "$db_id" != "null" ]; then
         echo "✅ D1 database created with ID: $db_id"
         echo ""
-        echo "📝 Please update your wrangler.jsonc file with the following configuration:"
+        echo "📝 Please update your wrangler.toml file with the following configuration:"
         echo ""
-        echo "  \"d1_databases\": ["
-        echo "    {"
-        echo "      \"binding\": \"DB\","
-        echo "      \"database_name\": \"ai-proxy-logs\","
-        echo "      \"database_id\": \"$db_id\""
-        echo "    }"
-        echo "  ]"
+        echo "[[d1_databases]]"
+        echo "binding = \"DB\""
+        echo "database_name = \"ai-proxy-logs\""
+        echo "database_id = \"$db_id\""
         echo ""
-        echo "After updating wrangler.jsonc, redeploy with: npm run deploy"
+        echo "After updating wrangler.toml, redeploy with: npm run deploy"
     else
         echo "❌ Failed to create D1 database"
     fi

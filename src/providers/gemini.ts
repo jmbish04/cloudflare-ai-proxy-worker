@@ -2,7 +2,18 @@
  * Google Gemini provider implementation
  */
 
-import { Env, ChatCompletionRequest, ChatCompletionResponse, CompletionRequest, CompletionResponse, ChatMessage } from '../types.js';
+import { 
+  Env, 
+  ChatCompletionRequest, 
+  ChatCompletionResponse, 
+  CompletionRequest, 
+  CompletionResponse, 
+  ChatMessage,
+  GeminiRequest,
+  GeminiResponse,
+  GeminiContent,
+  GeminiSystemInstruction
+} from '../types.js';
 import { resolveModel } from '../config.js';
 import { estimateTokens, estimatePromptTokens } from '../utils/tokens.js';
 
@@ -36,7 +47,7 @@ export async function handleGeminiChat(
   // Convert OpenAI format to Gemini format
   const conversionResult = convertToGeminiFormat(request.messages);
   
-  const geminiRequest: any = {
+  const geminiRequest: GeminiRequest = {
     contents: conversionResult.contents,
     generationConfig: {
       temperature: request.temperature,
