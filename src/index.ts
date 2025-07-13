@@ -56,9 +56,8 @@ export default {
 				
 				default:
 					return createErrorResponse(
-						'Not Found',
-						'not_found',
 						'The requested endpoint was not found',
+						'not_found',
 						404,
 						corsHeaders
 					);
@@ -66,9 +65,8 @@ export default {
 		} catch (error) {
 			console.error('Worker error:', error);
 			return createErrorResponse(
-				'Internal Server Error',
-				'internal_error',
 				error instanceof Error ? error.message : 'An unexpected error occurred',
+				'internal_error',
 				500,
 				corsHeaders
 			);
@@ -87,7 +85,7 @@ async function handleChatCompletions(
 	corsHeaders: Record<string, string>
 ): Promise<Response> {
 	if (request.method !== 'POST') {
-		return createErrorResponse('Method Not Allowed', 'method_not_allowed', 'Only POST method is allowed', 405, corsHeaders);
+		return createErrorResponse('Only POST method is allowed', 'method_not_allowed', 405, corsHeaders);
 	}
 	
 	// Verify authentication
@@ -132,9 +130,8 @@ async function handleChatCompletions(
 	} catch (error) {
 		console.error('Chat completions error:', error);
 		return createErrorResponse(
-			'Bad Request',
-			'invalid_request',
 			error instanceof Error ? error.message : 'Invalid request',
+			'invalid_request',
 			400,
 			corsHeaders
 		);
@@ -152,7 +149,7 @@ async function handleCompletions(
 	corsHeaders: Record<string, string>
 ): Promise<Response> {
 	if (request.method !== 'POST') {
-		return createErrorResponse('Method Not Allowed', 'method_not_allowed', 'Only POST method is allowed', 405, corsHeaders);
+		return createErrorResponse('Only POST method is allowed', 'method_not_allowed', 405, corsHeaders);
 	}
 	
 	// Verify authentication
@@ -197,9 +194,8 @@ async function handleCompletions(
 	} catch (error) {
 		console.error('Completions error:', error);
 		return createErrorResponse(
-			'Bad Request',
-			'invalid_request',
 			error instanceof Error ? error.message : 'Invalid request',
+			'invalid_request',
 			400,
 			corsHeaders
 		);
@@ -217,7 +213,7 @@ async function handleTokenize(
 	corsHeaders: Record<string, string>
 ): Promise<Response> {
 	if (request.method !== 'POST') {
-		return createErrorResponse('Method Not Allowed', 'method_not_allowed', 'Only POST method is allowed', 405, corsHeaders);
+		return createErrorResponse('Only POST method is allowed', 'method_not_allowed', 405, corsHeaders);
 	}
 	
 	// Verify authentication
@@ -261,9 +257,8 @@ async function handleTokenize(
 	} catch (error) {
 		console.error('Tokenize error:', error);
 		return createErrorResponse(
-			'Bad Request',
-			'invalid_request',
 			error instanceof Error ? error.message : 'Invalid request',
+			'invalid_request',
 			400,
 			corsHeaders
 		);
@@ -455,13 +450,12 @@ async function handleHealth(
 function createErrorResponse(
 	message: string,
 	type: string,
-	detail: string,
 	status: number,
 	corsHeaders: Record<string, string>
 ): Response {
 	const errorResponse: ErrorResponse = {
 		error: {
-			message: detail,
+			message,
 			type,
 			code: type,
 		},
