@@ -9,6 +9,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 // Parse JSON file safely
 function parseJsonFile(filePath) {
@@ -108,6 +109,75 @@ function generateGhCommands(issues) {
   });
 }
 
+// Create issues automatically using GitHub CLI
+async function createIssuesAutomatically(issues) {
+  console.log('\n=== Creating Issues Automatically ===\n');
+  
+  // Check if GitHub CLI is available
+  try {
+    execSync('gh --version', { stdio: 'ignore' });
+  } catch (error) {
+    console.log('❌ GitHub CLI (gh) is not available. Please install it or use manual creation method.');
+    return false;
+  }
+  
+  // Check if user is authenticated
+  try {
+    execSync('gh auth status', { stdio: 'ignore' });
+  } catch (error) {
+    console.log('❌ Not authenticated with GitHub CLI. Please run "gh auth login" first.');
+    return false;
+  }
+  
+  let created = 0;
+  let skipped = 0;
+  let errors = 0;
+  
+  for (const [index, issue] of issues.entries()) {
+    try {
+      console.log(`Creating issue ${index + 1}: ${issue.title}`);
+      
+      // Check if issue with similar title already exists
+      const existingIssues = execSync(`gh issue list --search "${issue.title}" --state all --json title`, { encoding: 'utf8' });
+      const existing = JSON.parse(existingIssues);
+      
+      if (existing.length > 0) {
+        console.log(`  ⚠️  Issue with similar title already exists, skipping...`);
+        skipped++;
+        continue;
+      }
+      
+      // Create the issue
+      const cmd = [
+        'gh', 'issue', 'create',
+        '--title', issue.title,
+        '--body', issue.body,
+        '--label', issue.labels.join(',')
+      ];
+      
+      execSync(cmd.join(' '), { 
+        stdio: 'pipe',
+        shell: true,
+        env: { ...process.env }
+      });
+      
+      console.log(`  ✅ Created successfully`);
+      created++;
+      
+    } catch (error) {
+      console.log(`  ❌ Failed to create: ${error.message}`);
+      errors++;
+    }
+  }
+  
+  console.log(`\n📊 Issue Creation Summary:`);
+  console.log(`  Created: ${created}`);
+  console.log(`  Skipped: ${skipped}`);
+  console.log(`  Errors: ${errors}`);
+  
+  return created > 0;
+}
+
 // Generate formatted output for manual creation
 function generateFormattedOutput(issues) {
   console.log('\n=== Formatted Issues for Manual Creation ===\n');
@@ -123,8 +193,12 @@ function generateFormattedOutput(issues) {
 }
 
 // Main execution
-function main() {
+async function main() {
   console.log('🔍 Creating GitHub Issues from Structured Project Tasks\n');
+  
+  // Check for command line arguments
+  const args = process.argv.slice(2);
+  const autoCreate = args.includes('--create') || process.env.AUTO_CREATE_ISSUES === 'true';
   
   const githubTasksPath = path.join(__dirname, 'project_tasks.json');
   const docsTasksPath = path.join(__dirname, '../docs/project_tasks.json');
@@ -156,7 +230,18 @@ function main() {
   
   console.log(`\n📋 Total issues to create: ${allIssues.length}`);
   
-  // Generate output in different formats
+  // Create issues automatically if requested
+  if (autoCreate) {
+    const success = await createIssuesAutomatically(allIssues);
+    if (success) {
+      console.log('\n✅ Issues created successfully!');
+      return;
+    } else {
+      console.log('\n⚠️  Automatic creation failed, falling back to manual commands...');
+    }
+  }
+  
+  // Generate output in different formats for manual creation
   generateGhCommands(allIssues);
   generateFormattedOutput(allIssues);
   
@@ -164,11 +249,15 @@ function main() {
   console.log('\nNext steps:');
   console.log('1. Copy and run the GitHub CLI commands above, or');
   console.log('2. Use the formatted output to manually create issues in GitHub');
+  console.log('3. Run with --create flag to automatically create issues');
 }
 
 // Run the script
 if (require.main === module) {
-  main();
+  main().catch(error => {
+    console.error('Error:', error.message);
+    process.exit(1);
+  });
 }
 
 module.exports = {
@@ -176,5 +265,6 @@ module.exports = {
   formatIssueTitle,
   formatIssueBody,
   processMilestoneStructure,
-  processArrayStructure
+  processArrayStructure,
+  createIssuesAutomatically
 };
