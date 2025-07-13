@@ -1,0 +1,59 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "ai-proxy-worker",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-07-12",
+	"compatibility_flags": [
+		"global_fetch_strictly_public"
+	],
+	"assets": {
+		"directory": "./public"
+	},
+	"observability": {
+		"enabled": true
+	},
+
+	/**
+	 * AI Binding for Cloudflare Workers AI
+	 * https://developers.cloudflare.com/workers-ai/
+	 */
+	"ai": {
+		"binding": "AI"
+	},
+
+	/**
+	 * Environment Variables
+	 * These can be overridden in production via wrangler secrets
+	 */
+	"vars": {
+		"ENVIRONMENT": "development"
+	},
+
+	/**
+	 * D1 Database binding for optional logging
+	 * Uncomment and configure if you want to use D1 for logging
+	 */
+	// "d1_databases": [
+	//   {
+	//     "binding": "DB",
+	//     "database_name": "ai-proxy-logs",
+	//     "database_id": "your-d1-database-id"
+	//   }
+	// ],
+
+	/**
+	 * Secrets for API keys (set via `wrangler secret put`)
+	 * - OPENAI_API_KEY: Your OpenAI API key
+	 * - GEMINI_API_KEY: Your Google Gemini API key
+	 * - AUTH_TOKEN: Authentication token for securing the proxy
+	 */
+
+	/**
+	 * Smart Placement for better performance
+	 */
+	"placement": { "mode": "smart" }
+}
