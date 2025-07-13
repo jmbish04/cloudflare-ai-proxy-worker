@@ -3,6 +3,17 @@
  */
 
 import { Env, LogEntry, AIProvider } from '../types.js';
+
+interface DatabaseStatsResult {
+  total_requests: number;
+  total_tokens: number;
+  avg_response_time: number;
+}
+
+interface DatabaseProviderResult {
+  provider: AIProvider;
+  count: number;
+}
 import { CONFIG } from '../config.js';
 
 /**

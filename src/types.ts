@@ -14,7 +14,7 @@ export interface Env {
   DB?: D1Database;
 
   // Cloudflare AI binding
-  AI?: AI;
+  AI?: AIBinding;
 }
 
 export type AIProvider = 'cloudflare' | 'openai' | 'gemini';
@@ -132,4 +132,29 @@ export interface LogEntry {
   tokens_used?: number;
   response_time: number;
   status: number;
+}
+
+// Cloudflare AI types
+export interface CloudflareAIRequest {
+  messages: Array<{ role: string; content: string }>;
+  temperature?: number;
+  max_tokens?: number;
+  top_p?: number;
+  stream?: boolean;
+}
+
+export interface CloudflareAIResponse {
+  response?: string;
+  content?: string;
+  text?: string;
+  choices?: Array<{
+    message?: {
+      content: string;
+    };
+  }>;
+}
+
+// Enhanced AI binding type
+export interface AIBinding {
+  run(model: string, request: CloudflareAIRequest): Promise<CloudflareAIResponse | string>;
 }
