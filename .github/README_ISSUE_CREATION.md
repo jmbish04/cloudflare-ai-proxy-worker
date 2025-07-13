@@ -111,12 +111,24 @@ node .github/test_issue_creation.js
 
 ## 📊 Current Tasks
 
-The tool currently identifies **4 structured tasks** ready for issue creation:
+The tool currently identifies **13 structured tasks** ready for issue creation:
 
+**Original Tasks (4):**
 1. **[Milestone 1: Setup] Timeline Project Initiation** (Phase: Backlog)
 2. **[Milestone 2: Core Endpoints] /v1/chat/completions** (Phase: To Do)  
 3. **[Planning Phase] Define project scope and requirements** (Phase: Planning)
 4. **[Setup Phase] Initialize Cloudflare Worker project** (Phase: Setup)
+
+**Gemini PR #3 Review Fixes (9):**
+5. **[Milestone 3: Gemini PR #3 Review Fixes] Token Estimation Enhancement** (Phase: In Progress)
+6. **[Milestone 3: Gemini PR #3 Review Fixes] Security - API Key Header Migration** (Phase: In Progress)
+7. **[Milestone 3: Gemini PR #3 Review Fixes] Add Missing Endpoint Tests** (Phase: In Progress)
+8. **[Milestone 3: Gemini PR #3 Review Fixes] Replace Invalid HTML Endpoints** (Phase: In Progress)
+9. **[Milestone 3: Gemini PR #3 Review Fixes] Improve Bash Script Robustness** (Phase: In Progress)
+10. **[Milestone 3: Gemini PR #3 Review Fixes] Fix Bash USER Variable** (Phase: In Progress)
+11. **[Milestone 3: Gemini PR #3 Review Fixes] Improve Model Detection Logic** (Phase: In Progress)
+12. **[Milestone 3: Gemini PR #3 Review Fixes] TypeScript Type Safety** (Phase: In Progress)
+13. **[Milestone 3: Gemini PR #3 Review Fixes] Standardize System Prompts** (Phase: In Progress)
 
 ## 💡 Example Output
 

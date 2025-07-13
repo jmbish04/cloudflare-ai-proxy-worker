@@ -22,5 +22,73 @@
         "unit_tests": "Mocked requests verify correct routing, headers match, model switching."
       }
     ]
+  },
+  "Milestone 3: Gemini PR #3 Review Fixes": {
+    "phase": "In Progress",
+    "tasks": [
+      {
+        "name": "Token Estimation Enhancement",
+        "description": "Replace current token estimation logic with `tiktoken` library for improved accuracy and compatibility.",
+        "status": "todo",
+        "success_criteria": "Token estimation uses tiktoken library and returns accurate counts for different model types.",
+        "unit_tests": "Test token counting accuracy against known input/output pairs for various models."
+      },
+      {
+        "name": "Security - API Key Header Migration", 
+        "description": "Move API key from URL parameter to header `x-goog-api-key` for enhanced security.",
+        "status": "todo",
+        "success_criteria": "API keys are passed via headers instead of URL parameters for all provider integrations.",
+        "unit_tests": "Verify API key is not exposed in URLs and is correctly passed in headers."
+      },
+      {
+        "name": "Add Missing Endpoint Tests",
+        "description": "Add comprehensive tests for `/v1/chat/completions` and `/v1/completions` endpoints.",
+        "status": "todo", 
+        "success_criteria": "Full test coverage for both endpoints including error cases and different providers.",
+        "unit_tests": "Tests cover request/response validation, provider routing, and error handling."
+      },
+      {
+        "name": "Replace Invalid HTML Endpoints",
+        "description": "Replace undefined `/message` and `/random` endpoints with valid API endpoints.",
+        "status": "todo",
+        "success_criteria": "All endpoints are properly defined and documented with valid routes.",
+        "unit_tests": "Verify all defined endpoints return appropriate responses and no undefined routes exist."
+      },
+      {
+        "name": "Improve Bash Script Robustness",
+        "description": "Use `--json` flag with `wrangler` commands and parse output with `jq` for reliable script execution.",
+        "status": "todo",
+        "success_criteria": "Deployment and build scripts use structured JSON output and robust parsing.",
+        "unit_tests": "Scripts execute successfully and handle various wrangler output formats."
+      },
+      {
+        "name": "Fix Bash USER Variable",
+        "description": "Replace dynamic `${USER}` variable with a constant value in bash scripts for consistency.",
+        "status": "todo", 
+        "success_criteria": "Scripts use consistent naming and don't rely on environment variables for critical paths.",
+        "unit_tests": "Scripts execute successfully across different environments and user contexts."
+      },
+      {
+        "name": "Improve Model Detection Logic",
+        "description": "Replace `indexOf()` with `startsWith('gpt-')` for more reliable model detection.",
+        "status": "todo",
+        "success_criteria": "Model detection is accurate and handles edge cases properly.",
+        "unit_tests": "Test model detection with various model names and edge cases."
+      },
+      {
+        "name": "TypeScript Type Safety",
+        "description": "Replace `any` types with appropriate TypeScript types for better type safety.",
+        "status": "todo",
+        "success_criteria": "All `any` types are replaced with specific interfaces and types.",
+        "unit_tests": "TypeScript compilation succeeds with strict type checking enabled."
+      },
+      {
+        "name": "Standardize System Prompts", 
+        "description": "Replace bare string prompts with `gemini_system_prompt` and require specific prompt input.",
+        "status": "todo",
+        "success_criteria": "System prompts are standardized and configurable with proper validation.",
+        "unit_tests": "Verify prompt validation and standardized prompt behavior across providers."
+      }
+    ]
   }
 }
