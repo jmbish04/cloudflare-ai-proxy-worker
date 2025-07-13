@@ -34,10 +34,10 @@ export async function handleGeminiChat(
   const model = resolveModel('gemini', request.model);
   
   // Convert OpenAI format to Gemini format
-  const geminiMessages = convertToGeminiFormat(request.messages);
+  const conversionResult = convertToGeminiFormat(request.messages);
   
-  const geminiRequest = {
-    contents: geminiMessages,
+  const geminiRequest: any = {
+    contents: conversionResult.contents,
     generationConfig: {
       temperature: request.temperature,
       maxOutputTokens: request.max_tokens,
@@ -45,6 +45,13 @@ export async function handleGeminiChat(
       stopSequences: Array.isArray(request.stop) ? request.stop : request.stop ? [request.stop] : undefined,
     },
   };
+
+  // Add system instruction if we have system messages
+  if (conversionResult.systemInstruction) {
+    geminiRequest.systemInstruction = {
+      parts: [{ text: conversionResult.systemInstruction }],
+    };
+  }
   
   try {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
@@ -141,17 +148,26 @@ export async function handleGeminiCompletion(
 /**
  * Convert OpenAI messages to Gemini format
  */
-function convertToGeminiFormat(messages: ChatMessage[]): any[] {
+function convertToGeminiFormat(messages: ChatMessage[]): { contents: any[], systemInstruction?: string } {
   const geminiMessages: any[] = [];
+  let systemInstruction: string | undefined;
   
   for (const message of messages) {
-    let role = 'user';
+    // Handle system messages with proper system instruction
+    if (message.role === 'system') {
+      // Combine multiple system messages if present
+      if (systemInstruction) {
+        systemInstruction += '\n\n' + message.content;
+      } else {
+        systemInstruction = message.content;
+      }
+      continue; // Don't add system messages to contents
+    }
     
     // Map OpenAI roles to Gemini roles
+    let role = 'user';
     if (message.role === 'assistant') {
       role = 'model';
-    } else if (message.role === 'system') {
-      role = 'user'; // Gemini doesn't have system role, treat as user
     }
     
     geminiMessages.push({
@@ -162,7 +178,10 @@ function convertToGeminiFormat(messages: ChatMessage[]): any[] {
     });
   }
   
-  return geminiMessages;
+  return {
+    contents: geminiMessages,
+    systemInstruction,
+  };
 }
 
 /**

@@ -35,8 +35,28 @@ export async function handleCloudflareChat(
     // Use type assertion for the AI binding since the exact type is complex
     const response = await (env.AI as any).run(model as any, cfRequest);
     
-    // Convert Cloudflare AI response to OpenAI format
-    const responseText = response.response || response.content || response.text || JSON.stringify(response);
+    // Convert Cloudflare AI response to OpenAI format with robust parsing
+    let responseText: string;
+    
+    if (typeof response === 'string') {
+      responseText = response;
+    } else if (response && typeof response === 'object') {
+      // Try known response properties in order of preference
+      if (response.response && typeof response.response === 'string') {
+        responseText = response.response;
+      } else if (response.content && typeof response.content === 'string') {
+        responseText = response.content;
+      } else if (response.text && typeof response.text === 'string') {
+        responseText = response.text;
+      } else if (response.choices && Array.isArray(response.choices) && response.choices[0]?.message?.content) {
+        responseText = response.choices[0].message.content;
+      } else {
+        // Fallback to JSON stringify for debugging
+        responseText = JSON.stringify(response);
+      }
+    } else {
+      throw new Error(`Unexpected response format from Cloudflare AI: ${typeof response}`);
+    }
     
     const choice = {
       index: 0,
