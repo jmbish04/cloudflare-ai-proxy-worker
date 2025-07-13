@@ -2,6 +2,12 @@ name: Create Issues From Tasks JSON
 
 on:
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run - only show what would be created'
+        required: false
+        default: 'false'
+        type: boolean
   push:
     branches:
       - main
@@ -25,7 +31,22 @@ jobs:
         with:
           node-version: '18'
           
-      - name: Run Issue Creator Script
+      - name: Install GitHub CLI
+        run: |
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update
+          sudo apt install gh
+          
+      - name: Run Issue Creator Script (Dry Run)
+        if: ${{ github.event.inputs.dry_run == 'true' }}
         run: node .github/create_issues_from_json.js
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Create Issues Automatically
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: node .github/create_issues_from_json.js --create
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AUTO_CREATE_ISSUES: 'true'
