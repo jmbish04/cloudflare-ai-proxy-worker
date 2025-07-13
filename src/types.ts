@@ -19,10 +19,10 @@ export interface Env {
   AUTH_TOKEN?: string;
   
   // Optional D1 database binding for logging
-  DB?: any; // D1Database type
-  
-  // Cloudflare AI binding
-  AI?: any; // Ai type
+DB?: D1Database;
+
+// Cloudflare AI binding
+AI?: AI;
 }
 
 export type AIProvider = 'cloudflare' | 'openai' | 'gemini';
