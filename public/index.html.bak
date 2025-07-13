@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Cloudflare AI Proxy Worker</title>
+	</head>
+	<body>
+		<h1 id="heading">Cloudflare AI Proxy Worker</h1>
+		<p>This page comes from a static asset stored at `public/index.html` as configured in `wrangler.jsonc`.</p>
+		<button id="healthButton" type="button">Check Health</button>
+		<button id="modelsButton" type="button">Get Available Models</button>
+		<output id="output" for="healthButton modelsButton"></output>
+		<script>
+			fetch('/health')
+				.then((resp) => resp.json())
+				.then((data) => {
+					console.log('Health check:', data);
+				})
+				.catch((error) => {
+					console.error('Health check failed:', error);
+				});
+
+			const healthButton = document.getElementById("healthButton");
+			healthButton.addEventListener("click", () => {
+				fetch('/health')
+					.then((resp) => resp.json())
+					.then((data) => {
+						const output = document.getElementById('output');
+						output.textContent = `Health: ${data.status}, Providers: ${data.available_providers.join(', ')}`;
+					})
+					.catch((error) => {
+						const output = document.getElementById('output');
+						output.textContent = `Error: ${error.message}`;
+					});
+			});
+
+			const modelsButton = document.getElementById("modelsButton");
+			modelsButton.addEventListener("click", () => {
+				fetch('/v1/model-options')
+					.then((resp) => resp.json())
+					.then((data) => {
+						const output = document.getElementById('output');
+						output.textContent = `Available models: ${data.data.length} models found`;
+					})
+					.catch((error) => {
+						const output = document.getElementById('output');
+						output.textContent = `Error: ${error.message}`;
+					});
+			});
+		</script>
+	</body>
+</html>
