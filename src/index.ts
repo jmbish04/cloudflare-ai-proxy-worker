@@ -56,7 +56,6 @@ export default {
 				
 				default:
 					return createErrorResponse(
-						'Not Found',
 						'not_found',
 						'The requested endpoint was not found',
 						404,
@@ -87,7 +86,7 @@ async function handleChatCompletions(
 	corsHeaders: Record<string, string>
 ): Promise<Response> {
 	if (request.method !== 'POST') {
-		return createErrorResponse('Method Not Allowed', 'method_not_allowed', 'Only POST method is allowed', 405, corsHeaders);
+		return createErrorResponse('method_not_allowed', 'Only POST method is allowed', 405, corsHeaders);
 	}
 	
 	// Verify authentication
@@ -152,7 +151,7 @@ async function handleCompletions(
 	corsHeaders: Record<string, string>
 ): Promise<Response> {
 	if (request.method !== 'POST') {
-		return createErrorResponse('Method Not Allowed', 'method_not_allowed', 'Only POST method is allowed', 405, corsHeaders);
+		return createErrorResponse('method_not_allowed', 'Only POST method is allowed', 405, corsHeaders);
 	}
 	
 	// Verify authentication
@@ -217,7 +216,7 @@ async function handleTokenize(
 	corsHeaders: Record<string, string>
 ): Promise<Response> {
 	if (request.method !== 'POST') {
-		return createErrorResponse('Method Not Allowed', 'method_not_allowed', 'Only POST method is allowed', 405, corsHeaders);
+		return createErrorResponse('method_not_allowed', 'Only POST method is allowed', 405, corsHeaders);
 	}
 	
 	// Verify authentication
@@ -281,7 +280,7 @@ async function handleModelOptions(
 	corsHeaders: Record<string, string>
 ): Promise<Response> {
 	if (request.method !== 'GET') {
-		return createErrorResponse('Method Not Allowed', 'method_not_allowed', 'Only GET method is allowed', 405, corsHeaders);
+		return createErrorResponse('method_not_allowed', 'Only GET method is allowed', 405, corsHeaders);
 	}
 	
 	// Verify authentication
@@ -359,7 +358,7 @@ async function handleRouteCheck(
 	corsHeaders: Record<string, string>
 ): Promise<Response> {
 	if (request.method !== 'GET') {
-		return createErrorResponse('Method Not Allowed', 'method_not_allowed', 'Only GET method is allowed', 405, corsHeaders);
+		return createErrorResponse('method_not_allowed', 'Only GET method is allowed', 405, corsHeaders);
 	}
 	
 	// Verify authentication
@@ -453,15 +452,14 @@ async function handleHealth(
  * Create a standardized error response
  */
 function createErrorResponse(
-	message: string,
 	type: string,
-	detail: string,
+	message: string,
 	status: number,
 	corsHeaders: Record<string, string>
 ): Response {
 	const errorResponse: ErrorResponse = {
 		error: {
-			message: detail,
+			message,
 			type,
 			code: type,
 		},
