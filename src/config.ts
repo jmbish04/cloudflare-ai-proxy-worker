@@ -19,16 +19,18 @@ export const MODEL_REGISTRY: Record<AIProvider, Record<string, string>> = {
     'gpt-3.5-turbo': 'gpt-3.5-turbo',
   },
   gemini: {
-    default: 'gemini-pro',
-    'gemini-pro': 'gemini-pro',
-    'gemini-1.5-pro': 'gemini-1.5-pro',
+    default: 'gemini-1.5-flash-latest',
+    'gemini-pro': 'gemini-1.5-pro-latest',
+    'gemini-1.5-pro': 'gemini-1.5-pro-latest',
+    'gemini-1.5-flash': 'gemini-1.5-flash-latest',
+    'gemini-flash': 'gemini-1.5-flash-latest',
   },
 };
 
 export const DEFAULT_MODELS: Record<AIProvider, string> = {
   cloudflare: '@cf/meta/llama-4-scout-17b-16e-instruct',
   openai: 'gpt-4',
-  gemini: 'gemini-pro',
+  gemini: 'gemini-1.5-flash-latest',
 };
 
 /**
